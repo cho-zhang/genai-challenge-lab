@@ -1,0 +1,35 @@
+# Experiment configuration for NIST Code Pilot challenge
+# This file controls which LLM model, parameters, and prompts to use
+
+# File paths (relative to current working directory)
+#input_json_path: "2026_code/genai_code_pilot_data_participant/input_dry_v2d00.json"
+input_json_path: "2026_code/genai_code_pilot_data_participant/input_pilot_v2d00.json"
+output_folder: "2026_code/submissions"
+
+# LLM configuration
+llm_config:
+  # model_name: "gpt-5-nano"
+  # temperature: 1.0
+  # litellm.exceptions.ContextWindowExceededError: litellm.ContextWindowExceededError: litellm.BadRequestError: ContextWindowExceededError: OpenAIException - This model's maximum context length is 8192 tokens. However, you requested 8220 tokens (220 in the messages, 8000 in the completion).
+  # max_completion_tokens: 500
+  # important: turn off reasoning for code gen
+  # Literal["none", "minimal", "low", "medium", "high", "xhigh", "default"]
+  # reasoning_effort: "minimal"
+  # top_p: 1.0
+  # tool_choice: "auto"
+
+  # ============ #
+  model_name: "gpt-4"
+  temperature: 0.0
+  max_completion_tokens: 500
+  # important: turn off reasoning for code gen
+  # top_p: 1.0
+  # tool_choice: "auto"
+
+# Prompt configuration
+# Use the fixed prompt from NIST input data
+prompt_name: "prompt_fixed"
+prompt_version: "2.00"
+# Or use custom prompt from registry:
+# prompt_name: "test_generation"
+# prompt_version: "v1"
