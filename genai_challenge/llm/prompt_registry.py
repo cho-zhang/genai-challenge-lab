@@ -1,6 +1,8 @@
 """Prompt management for fixed and custom experimental prompts."""
 from typing import Callable
 
+from genai_challenge.io.prompt_reader import PromptReader
+
 
 class CustomPromptRegistry:
     """Registry for custom experimental prompts with name/version management."""
@@ -91,3 +93,22 @@ def get_custom_prompt(name: str, version: str) -> str:
         KeyError: If the prompt name or version is not found in registry
     """
     return custom_prompt_registry.get(name, version)
+
+
+# ============================================================================
+# Custom prompts
+# ============================================================================
+
+@custom_prompt_registry.register(name="custom_prompt", version="1")
+def custom_prompt_1() -> str:
+    return PromptReader.load_prompt(name="custom_prompt", version="1")
+
+
+@custom_prompt_registry.register(name="custom_prompt", version="2")
+def custom_prompt_2() -> str:
+    return PromptReader.load_prompt(name="custom_prompt", version="2")
+
+
+@custom_prompt_registry.register(name="custom_prompt", version="3")
+def custom_prompt_3() -> str:
+    return PromptReader.load_prompt(name="custom_prompt", version="3")

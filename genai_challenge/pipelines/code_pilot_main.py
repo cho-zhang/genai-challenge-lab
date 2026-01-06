@@ -22,9 +22,6 @@ from genai_challenge.models.messages import (
     RoleMessage,
 )
 
-# Import to register custom prompts
-import genai_challenge.experiments.prompts  # noqa: F401
-
 TESTS_CODE_BEGIN = r"###\|\=-=-=beginning of tests=-=-=\|"
 TESTS_CODE_END = r"###\|\=-=-=end of tests=-=-=\|"
 
@@ -69,7 +66,8 @@ def _extract_test_code(text: str) -> str:
 
 def _validate_test_code(
     raw_code: str,
-    testing_import_statement: str
+    testing_import_statement: str,
+    primary_method_name: str,
 ) -> str | None:
     """Validate test code based on eval requirements.
 
@@ -77,6 +75,7 @@ def _validate_test_code(
     - testing_import_statement is included exactly once
     - No implementation of target function exists
     - Code is clean text (no markdown fences)
+    - Test function for target function exists
 
     Args:
         raw_code: The extracted test code to validate
@@ -88,32 +87,34 @@ def _validate_test_code(
     errors = []
 
     # Check 1: pytest is imported
-    if "import pytest" not in raw_code and "from pytest import" not in raw_code:
+    if "import pytest" not in raw_code:
         errors.append("Missing pytest import")
 
     # Check 2: testing_import_statement is included exactly once
-    import_count = raw_code.count(testing_import_statement)
-    if import_count == 0:
-        errors.append(f"Missing required import: {testing_import_statement}")
-    elif import_count > 1:
-        errors.append(f"Import statement appears {import_count} times (should be exactly once): {testing_import_statement}")
+    # TODO: LLM may optimize by removing unused imports or adding spaces
+    # import_count = raw_code.count(testing_import_statement)
+    # if import_count == 0:
+    #     errors.append(f"Missing required import: {testing_import_statement}")
+    # elif import_count > 1:
+    #     errors.append(f"Import statement appears {import_count} times (should be exactly once): {testing_import_statement}")
 
-    # Check 3: No implementation of target function exists
-    # Extract function name from testing_import_statement (e.g., "from solution import foo" -> "foo")
-    import_match = re.search(r'from\s+\S+\s+import\s+(\w+)', testing_import_statement)
-    if import_match:
-        function_name = import_match.group(1)
-        # Check for function definition (def function_name)
-        if re.search(rf'^def\s+{function_name}\s*\(', raw_code, re.MULTILINE):
-            errors.append(f"Test code contains implementation of target function: {function_name}")
+    # Check 3: No implementation of primary_method_name exists
+    if re.search(rf'^def\s+{primary_method_name}\s*\(', raw_code, re.MULTILINE):
+        errors.append(f"Test code should not contain implementation of function: {primary_method_name}")
 
     # Check 4: Code is clean text (no markdown fences)
     if "```" in raw_code:
         errors.append("Test code contains markdown code fences (```)")
 
+    # Check 5: Test functions exist
+    if not re.search(r'^def\s+test_\w+\s*\(', raw_code, re.MULTILINE):
+        errors.append(f"No test functions found for target method: {primary_method_name}")
+
     # Return error message if any checks failed
     if errors:
-        return "Validation failed:\n" + "\n".join(f"  - {error}" for error in errors)
+        error_message = "Validation failed:\n" + "\n".join(f"  - {error}" for error in errors)
+        print(error_message)
+        return f"\n{error_message}\n\n{raw_code})"
 
     return None
 
@@ -153,10 +154,10 @@ def _build_completion_messages(
 
     user_message = UserMessage(
         content=f"""Testing Import Statement:
-            {input_code.testing_import_statement}
+{input_code.testing_import_statement}
             
-            Specification:
-            {input_code.specification}
+Specification:
+{input_code.specification}
         """
     )
 
@@ -207,9 +208,10 @@ def _convert_to_submission_code(
         raise ValueError(f"No content in assistant message for trial {input_code_list.trial_id}")
 
     test_code = _extract_test_code(assistant_message.content)
-    validation_message = _validate_test_code(
+    error_message = _validate_test_code(
         raw_code=test_code,
         testing_import_statement=input_code_list.testing_import_statement,
+        primary_method_name=input_code_list.primary_method_name,
     )
 
     return SubmissionCodeList(
@@ -218,7 +220,7 @@ def _convert_to_submission_code(
         prompt=prompt_used,
         primary_method_name=input_code_list.primary_method_name,
         test_output=assistant_message.content,
-        test_code=test_code if not validation_message else validation_message
+        test_code=test_code if not error_message else ""
     )
 
 
@@ -431,7 +433,7 @@ def run_code_pilot(
 
     # Save to JSON
     output_file_path = output_folder / f"{submission_data.name}.json"
-    print(f"\n[5/7] Saving submission to: {output_file_path}")
+    print(f"\n[5/5] Saving submission to: {output_file_path}")
     save_submission_data(submission_data, output_folder)
     print("  ✓ Submission saved successfully")
 
