@@ -112,3 +112,11 @@ def custom_prompt_2() -> str:
 @custom_prompt_registry.register(name="custom_prompt", version="3")
 def custom_prompt_3() -> str:
     return PromptReader.load_prompt(name="custom_prompt", version="3")
+
+@custom_prompt_registry.register(name="custom_prompt", version="4")
+def custom_prompt_4() -> str:
+    return PromptReader.load_prompt(name="custom_prompt", version="4")
+
+@custom_prompt_registry.register(name="custom_prompt", version="5")
+def custom_prompt_5() -> str:
+    return PromptReader.load_prompt(name="custom_prompt", version="5")

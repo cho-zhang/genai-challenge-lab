@@ -76,6 +76,7 @@ def _validate_test_code(
     - No implementation of target function exists
     - Code is clean text (no markdown fences)
     - Test function for target function exists
+    - Test code is restricted to 25,000 characters or less
 
     Args:
         raw_code: The extracted test code to validate
@@ -107,8 +108,12 @@ def _validate_test_code(
         errors.append("Test code contains markdown code fences (```)")
 
     # Check 5: Test functions exist
-    if not re.search(r'^def\s+test_\w+\s*\(', raw_code, re.MULTILINE):
+    if not re.search(r'^\s*def\s+test_\w+\s*\(', raw_code, re.MULTILINE):
         errors.append(f"No test functions found for target method: {primary_method_name}")
+
+    # Check 6: Restricted to 25,000 characters or less
+    if len(raw_code) > 25000:
+        errors.append(f"test code size is > 25,000 characters.")
 
     # Return error message if any checks failed
     if errors:
@@ -373,6 +378,9 @@ def run_code_pilot(
             # === FIXED PROMPT (prompt_number = "0") ===
             print("      Calling LLM with fixed prompt...")
 
+            # if input_code.trial_id != "00003_make_palindrome":
+            #     continue
+
             # Build messages for fixed prompt (just a single UserMessage)
             fixed_messages = [UserMessage(content=input_code.prompt_fixed)]
             fixed_prompt_string = input_code.prompt_fixed
@@ -411,6 +419,8 @@ def run_code_pilot(
             )
             submission_code_list.append(custom_submission_code)
             print(f"      ✓ Extracted test code ({len(custom_submission_code.test_code)} chars)")
+
+            # break
 
         except Exception as e:
             print(f"      ✗ Error processing trial {input_code.trial_id}: {e}")
