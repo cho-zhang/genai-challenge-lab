@@ -1,5 +1,6 @@
 """Prompt management for fixed and custom experimental prompts."""
-from typing import Callable
+
+from collections.abc import Callable
 
 from genai_challenge.io.prompt_reader import PromptReader
 
@@ -23,11 +24,14 @@ class CustomPromptRegistry:
             def my_test_prompt():
                 return "Generate tests for..."
         """
+
         def decorator(func: Callable[[], str]) -> Callable[[], str]:
             prompt_text = func()
 
             if not isinstance(prompt_text, str):
-                raise TypeError(f"Prompt must be a string, got {type(prompt_text)}")
+                raise TypeError(
+                    f"Prompt must be a string, got {type(prompt_text)}"
+                )
 
             if name not in self._prompts:
                 self._prompts[name] = {}
@@ -76,6 +80,7 @@ custom_prompt_registry = CustomPromptRegistry()
 # Public function to get prompts
 # ============================================================================
 
+
 def get_custom_prompt(name: str, version: str) -> str:
     """Fetch a custom experimental prompt from the registry.
 
@@ -99,6 +104,7 @@ def get_custom_prompt(name: str, version: str) -> str:
 # Custom prompts
 # ============================================================================
 
+
 @custom_prompt_registry.register(name="custom_prompt", version="1")
 def custom_prompt_1() -> str:
     return PromptReader.load_prompt(name="custom_prompt", version="1")
@@ -113,9 +119,11 @@ def custom_prompt_2() -> str:
 def custom_prompt_3() -> str:
     return PromptReader.load_prompt(name="custom_prompt", version="3")
 
+
 @custom_prompt_registry.register(name="custom_prompt", version="4")
 def custom_prompt_4() -> str:
     return PromptReader.load_prompt(name="custom_prompt", version="4")
+
 
 @custom_prompt_registry.register(name="custom_prompt", version="5")
 def custom_prompt_5() -> str:

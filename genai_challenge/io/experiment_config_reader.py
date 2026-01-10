@@ -1,7 +1,9 @@
 """Reader for experiment configuration YAML files."""
-import yaml
+
 from pathlib import Path
-from typing import Union, Any
+from typing import Any
+
+import yaml
 
 from genai_challenge.models.code_pilot_data import ExperimentConfig
 from genai_challenge.models.messages import LLMConfig
@@ -11,7 +13,7 @@ class ExperimentConfigReader:
     """Reader for loading experiment configurations from YAML files."""
 
     @staticmethod
-    def load_experiment_config(path: Union[str, Path]) -> ExperimentConfig:
+    def load_experiment_config(path: str | Path) -> ExperimentConfig:
         """Load and validate experiment configuration from YAML file.
 
         Args:
@@ -32,7 +34,9 @@ class ExperimentConfigReader:
             raw = yaml.safe_load(f)
 
         if not isinstance(raw, dict):
-            raise ValueError(f"Invalid YAML: expected a dictionary, got {type(raw)}")
+            raise ValueError(
+                f"Invalid YAML: expected a dictionary, got {type(raw)}"
+            )
 
         return ExperimentConfigReader._parse_experiment_config(raw)
 

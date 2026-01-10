@@ -1,5 +1,4 @@
 from pathlib import Path
-from typing import Optional, Union
 
 
 class PromptReader:
@@ -10,9 +9,7 @@ class PromptReader:
 
     @staticmethod
     def load_prompt(
-        name: str,
-        version: str,
-        prompts_dir: Optional[Union[str, Path]] = None
+        name: str, version: str, prompts_dir: str | Path | None = None
     ) -> str:
         """Load a prompt text file by name and version.
 
@@ -71,4 +68,4 @@ class PromptReader:
                 content = f.read()
             return content
         except Exception as e:
-            raise IOError(f"Failed to read prompt file {file_path}: {e}") from e
+            raise OSError(f"Failed to read prompt file {file_path}: {e}") from e

@@ -1,14 +1,12 @@
 import json
 from pathlib import Path
-from typing import Union
 
-from genai_challenge.models.code_pilot_data import InputData, InputCodeList
+from genai_challenge.models.code_pilot_data import InputCodeList, InputData
 
 
 class NISTInputReader:
-
     @staticmethod
-    def load_code_pilot_input(path: Union[str, Path]) -> InputData:
+    def load_code_pilot_input(path: str | Path) -> InputData:
         """
         Load and validate NIST GenAI Code Pilot input JSON file.
         """
@@ -30,7 +28,9 @@ class NISTInputReader:
         required_fields = ["name", "version", "Evaluation_Version", "code_list"]
         for field in required_fields:
             if field not in raw:
-                raise ValueError(f"Missing required field: '{field}' in {file_name}")
+                raise ValueError(
+                    f"Missing required field: '{field}' in {file_name}"
+                )
 
         if not isinstance(raw["code_list"], list):
             raise ValueError("'code_list' must be a list")
@@ -65,7 +65,9 @@ class NISTInputReader:
         ]
         for field in required_fields:
             if field not in item:
-                raise ValueError(f"Missing required field: '{field}' in {file_name}")
+                raise ValueError(
+                    f"Missing required field: '{field}' in {file_name}"
+                )
 
         return InputCodeList(
             trial_id=str(item["trial_id"]),

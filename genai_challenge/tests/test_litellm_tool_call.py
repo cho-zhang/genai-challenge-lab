@@ -1,9 +1,9 @@
-import litellm
 import json
+
+import litellm
 
 from genai_challenge.llm.model_clients import LLMClient
 from genai_challenge.models.messages import LLMConfig, SystemMessage
-
 
 
 def test_parallel_function_call_disabled():
@@ -13,17 +13,32 @@ def test_parallel_function_call_disabled():
     def get_current_weather(location, unit="fahrenheit"):
         """Get the current weather in a given location"""
         if "tokyo" in location.lower():
-            return json.dumps({"location": "Tokyo", "temperature": "10", "unit": "celsius"})
+            return json.dumps(
+                {"location": "Tokyo", "temperature": "10", "unit": "celsius"}
+            )
         elif "san francisco" in location.lower():
-            return json.dumps({"location": "San Francisco", "temperature": "72", "unit": "fahrenheit"})
+            return json.dumps(
+                {
+                    "location": "San Francisco",
+                    "temperature": "72",
+                    "unit": "fahrenheit",
+                }
+            )
         elif "paris" in location.lower():
-            return json.dumps({"location": "Paris", "temperature": "22", "unit": "celsius"})
+            return json.dumps(
+                {"location": "Paris", "temperature": "22", "unit": "celsius"}
+            )
         else:
             return json.dumps({"location": location, "temperature": "unknown"})
 
     try:
         # Step 1: send the conversation and available functions to the model
-        messages = [{"role": "user", "content": "What's the weather like in San Francisco, Tokyo, and Paris?"}]
+        messages = [
+            {
+                "role": "user",
+                "content": "What's the weather like in San Francisco, Tokyo, and Paris?",
+            }
+        ]
         tools = [
             {
                 "type": "function",
@@ -37,7 +52,10 @@ def test_parallel_function_call_disabled():
                                 "type": "string",
                                 "description": "The city and state, e.g. San Francisco, CA",
                             },
-                            "unit": {"type": "string", "enum": ["celsius", "fahrenheit"]},
+                            "unit": {
+                                "type": "string",
+                                "enum": ["celsius", "fahrenheit"],
+                            },
                         },
                         "required": ["location"],
                     },
@@ -67,7 +85,9 @@ def test_parallel_function_call_disabled():
             available_functions = {
                 "get_current_weather": get_current_weather,
             }  # only one function in this example, but you can have multiple
-            messages.append(response_message)  # extend conversation with assistant's reply
+            messages.append(
+                response_message
+            )  # extend conversation with assistant's reply
 
             # Step 4: send the info for each function call and function response to the model
             for tool_call in tool_calls:
@@ -95,14 +115,14 @@ def test_parallel_function_call_disabled():
             #  ModelResponse(id='chatcmpl-...', created=1767428031, model='gpt-5-nano-2025-08-07', object='chat.completion', system_fingerprint='fp_982035f36f', choices=[Choices(finish_reason='stop', index=0, message=Message(content='Currently, the weather in San Francisco is 72°F (22°C), in Tokyo is 10°C, and in Paris is 22°C.', role='assistant', tool_calls=None, function_call=None, provider_specific_fields={'refusal': None}, annotations=[]), provider_specific_fields={})], usage=Usage(completion_tokens=30, prompt_tokens=175, total_tokens=205, completion_tokens_details=CompletionTokensDetailsWrapper(accepted_prediction_tokens=0, audio_tokens=0, reasoning_tokens=0, rejected_prediction_tokens=0, text_tokens=None, image_tokens=None), prompt_tokens_details=PromptTokensDetailsWrapper(audio_tokens=0, cached_tokens=0, text_tokens=None, image_tokens=None)), service_tier='default')
             return second_response
     except Exception as e:
-      print(f"Error occurred: {e}")
+        print(f"Error occurred: {e}")
 
 
 def test_generate_text_with_fixed_prompt():
     prompt = (
         "We have python code that implements the following specification.\n\nSpecification:\n\ndef add(x: int, "
-        "y: int) -> int:\n    \"\"\"\n    Given two integers x, and y, return the sum of x and y. If either x "
-        "or y is not\n    an integer, raise a TypeError Exception.\n    \"\"\"\n\n\nPlease write python pytest "
+        'y: int) -> int:\n    """\n    Given two integers x, and y, return the sum of x and y. If either x '
+        'or y is not\n    an integer, raise a TypeError Exception.\n    """\n\n\nPlease write python pytest '
         "test code that comprehensively tests the code for method add to determine if the code satisfies the "
         "specification or not. When writing tests:\n* write a comprehensive test suite,\n* test edge cases,"
         "\n* only generate correct tests, and\n* include tests for TypeError cases.\n\nPlease write "
@@ -125,6 +145,7 @@ def test_generate_text_with_fixed_prompt():
         ]
     )
     print(f"\nAssistant message for fixed prompt:\n{assistant_message}")
+
 
 test_parallel_function_call_disabled()
 test_generate_text_with_fixed_prompt()

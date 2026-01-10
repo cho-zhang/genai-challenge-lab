@@ -11,12 +11,14 @@ class InputCodeList:
     specification: str
     prompt_fixed: str
 
+
 @dataclass
 class InputData:
     name: str
     Evaluation_Version: str
     code_list: list[InputCodeList]
     version: str = "2.00"
+
 
 @dataclass
 class SubmissionCodeList:
@@ -26,6 +28,7 @@ class SubmissionCodeList:
     primary_method_name: str
     test_output: str
     test_code: str
+
 
 @dataclass
 class SubmissionData:
@@ -44,9 +47,12 @@ class ExperimentConfig:
     - Which prompt to use (fixed from NIST data or custom from registry)
     - Input and output file paths
     """
+
     llm_config: LLMConfig
     input_json_path: str
     output_folder: str
     experiment_version: str = ""  # Auto-generated at runtime if not provided
-    prompt_name: str = "prompt_fixed"  # default to "prompt_fixed" for NIST fixed prompts
+    prompt_name: str = (
+        "prompt_fixed"  # default to "prompt_fixed" for NIST fixed prompts
+    )
     prompt_version: str = "v1"  # version identifier for custom prompts

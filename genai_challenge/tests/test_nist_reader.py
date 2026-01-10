@@ -1,10 +1,11 @@
 """Unit tests for NISTInputReader."""
 
 import json
+
 import pytest
 
 from genai_challenge.io.nist_reader import NISTInputReader
-from genai_challenge.models.code_pilot_data import InputData, InputCodeList
+from genai_challenge.models.code_pilot_data import InputCodeList, InputData
 
 
 class TestNISTInputReader:
@@ -112,16 +113,22 @@ class TestNISTInputReader:
         input_file = tmp_path / "input.json"
         input_file.write_text(json.dumps(valid_input_data))
 
-        with pytest.raises(ValueError, match="Missing required field: 'version'"):
+        with pytest.raises(
+            ValueError, match="Missing required field: 'version'"
+        ):
             NISTInputReader.load_code_pilot_input(input_file)
 
-    def test_missing_required_field_evaluation_version(self, valid_input_data, tmp_path):
+    def test_missing_required_field_evaluation_version(
+        self, valid_input_data, tmp_path
+    ):
         """Test missing 'Evaluation_Version' field."""
         del valid_input_data["Evaluation_Version"]
         input_file = tmp_path / "input.json"
         input_file.write_text(json.dumps(valid_input_data))
 
-        with pytest.raises(ValueError, match="Missing required field: 'Evaluation_Version'"):
+        with pytest.raises(
+            ValueError, match="Missing required field: 'Evaluation_Version'"
+        ):
             NISTInputReader.load_code_pilot_input(input_file)
 
     def test_missing_required_field_code_list(self, valid_input_data, tmp_path):
@@ -130,7 +137,9 @@ class TestNISTInputReader:
         input_file = tmp_path / "input.json"
         input_file.write_text(json.dumps(valid_input_data))
 
-        with pytest.raises(ValueError, match="Missing required field: 'code_list'"):
+        with pytest.raises(
+            ValueError, match="Missing required field: 'code_list'"
+        ):
             NISTInputReader.load_code_pilot_input(input_file)
 
     def test_code_list_not_list(self, valid_input_data, tmp_path):
@@ -158,17 +167,23 @@ class TestNISTInputReader:
         input_file = tmp_path / "input.json"
         input_file.write_text(json.dumps(valid_input_data))
 
-        with pytest.raises(ValueError, match="Failed to parse trial at index 0"):
+        with pytest.raises(
+            ValueError, match="Failed to parse trial at index 0"
+        ):
             NISTInputReader.load_code_pilot_input(input_file)
 
-    def test_trial_missing_trial_id(self, valid_trial_data, valid_input_data, tmp_path):
+    def test_trial_missing_trial_id(
+        self, valid_trial_data, valid_input_data, tmp_path
+    ):
         """Test trial missing 'trial_id' field."""
         del valid_trial_data["trial_id"]
         valid_input_data["code_list"] = [valid_trial_data]
         input_file = tmp_path / "input.json"
         input_file.write_text(json.dumps(valid_input_data))
 
-        with pytest.raises(ValueError, match="Missing required field: 'trial_id'"):
+        with pytest.raises(
+            ValueError, match="Missing required field: 'trial_id'"
+        ):
             NISTInputReader.load_code_pilot_input(input_file)
 
     def test_trial_missing_testing_import_statement(
@@ -181,7 +196,8 @@ class TestNISTInputReader:
         input_file.write_text(json.dumps(valid_input_data))
 
         with pytest.raises(
-            ValueError, match="Missing required field: 'testing_import_statement'"
+            ValueError,
+            match="Missing required field: 'testing_import_statement'",
         ):
             NISTInputReader.load_code_pilot_input(input_file)
 
@@ -208,7 +224,9 @@ class TestNISTInputReader:
         input_file = tmp_path / "input.json"
         input_file.write_text(json.dumps(valid_input_data))
 
-        with pytest.raises(ValueError, match="Missing required field: 'specification'"):
+        with pytest.raises(
+            ValueError, match="Missing required field: 'specification'"
+        ):
             NISTInputReader.load_code_pilot_input(input_file)
 
     def test_trial_missing_prompt_fixed(
@@ -220,12 +238,18 @@ class TestNISTInputReader:
         input_file = tmp_path / "input.json"
         input_file.write_text(json.dumps(valid_input_data))
 
-        with pytest.raises(ValueError, match="Missing required field: 'prompt_fixed'"):
+        with pytest.raises(
+            ValueError, match="Missing required field: 'prompt_fixed'"
+        ):
             NISTInputReader.load_code_pilot_input(input_file)
 
-    def test_whitespace_stripping(self, valid_trial_data, valid_input_data, tmp_path):
+    def test_whitespace_stripping(
+        self, valid_trial_data, valid_input_data, tmp_path
+    ):
         """Test that whitespace is stripped from trial fields."""
-        valid_trial_data["testing_import_statement"] = "  from genai_code_file import add  "
+        valid_trial_data["testing_import_statement"] = (
+            "  from genai_code_file import add  "
+        )
         valid_trial_data["primary_method_name"] = "  add  "
         valid_trial_data["specification"] = "  def add(x: int) -> int: pass  "
         valid_trial_data["prompt_fixed"] = "  Write tests  "
@@ -236,7 +260,9 @@ class TestNISTInputReader:
         result = NISTInputReader.load_code_pilot_input(input_file)
 
         trial = result.code_list[0]
-        assert trial.testing_import_statement == "from genai_code_file import add"
+        assert (
+            trial.testing_import_statement == "from genai_code_file import add"
+        )
         assert trial.primary_method_name == "add"
         assert trial.specification == "def add(x: int) -> int: pass"
         assert trial.prompt_fixed == "Write tests"
@@ -257,12 +283,16 @@ class TestNISTInputReader:
         input_file = tmp_path / "input.json"
         input_file.write_text(json.dumps(valid_input_data))
 
-        with pytest.raises(ValueError, match="Failed to parse trial at index 1"):
+        with pytest.raises(
+            ValueError, match="Failed to parse trial at index 1"
+        ):
             NISTInputReader.load_code_pilot_input(input_file)
 
     def test_validate_input_data_directly(self, valid_input_data):
         """Test _validate_input_data static method directly."""
-        result = NISTInputReader._validate_input_data(valid_input_data, "test.json")
+        result = NISTInputReader._validate_input_data(
+            valid_input_data, "test.json"
+        )
 
         assert isinstance(result, InputData)
         assert result.name == "Test Input"

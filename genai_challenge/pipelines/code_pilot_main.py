@@ -1,26 +1,24 @@
 import json
 import os
 import re
-import time
 from datetime import datetime
 from pathlib import Path
-from typing import Union
 
-from genai_challenge.io.nist_reader import NISTInputReader
 from genai_challenge.io.experiment_config_reader import ExperimentConfigReader
+from genai_challenge.io.nist_reader import NISTInputReader
 from genai_challenge.llm.model_clients import LLMClient
 from genai_challenge.llm.prompt_registry import get_custom_prompt
 from genai_challenge.models.code_pilot_data import (
-    InputCodeList,
-    SubmissionData,
-    SubmissionCodeList,
     ExperimentConfig,
+    InputCodeList,
+    SubmissionCodeList,
+    SubmissionData,
 )
 from genai_challenge.models.messages import (
-    SystemMessage,
-    UserMessage,
     AssistantMessage,
     RoleMessage,
+    SystemMessage,
+    UserMessage,
 )
 
 TESTS_CODE_BEGIN = r"###\|\=-=-=beginning of tests=-=-=\|"
@@ -45,24 +43,20 @@ def _extract_test_code(text: str) -> str:
     """
     # First try to match both delimiters
     match = re.search(
-        rf"{TESTS_CODE_BEGIN}(.*?){TESTS_CODE_END}",
-        text,
-        flags=re.DOTALL
+        rf"{TESTS_CODE_BEGIN}(.*?){TESTS_CODE_END}", text, flags=re.DOTALL
     )
     if match:
         return match.group(1).strip()
 
     # If no end delimiter, try to match just the beginning and take everything after
-    match_begin = re.search(
-        rf"{TESTS_CODE_BEGIN}(.*)",
-        text,
-        flags=re.DOTALL
-    )
+    match_begin = re.search(rf"{TESTS_CODE_BEGIN}(.*)", text, flags=re.DOTALL)
     if match_begin:
         return match_begin.group(1).strip()
 
     # No beginning delimiter found - this is an error
-    raise ValueError("Could not find test code beginning delimiter in LLM output")
+    raise ValueError(
+        "Could not find test code beginning delimiter in LLM output"
+    )
 
 
 def _validate_test_code(
@@ -101,24 +95,30 @@ def _validate_test_code(
     #     errors.append(f"Import statement appears {import_count} times (should be exactly once): {testing_import_statement}")
 
     # Check 3: No implementation of primary_method_name exists
-    if re.search(rf'^def\s+{primary_method_name}\s*\(', raw_code, re.MULTILINE):
-        errors.append(f"Test code should not contain implementation of function: {primary_method_name}")
+    if re.search(rf"^def\s+{primary_method_name}\s*\(", raw_code, re.MULTILINE):
+        errors.append(
+            f"Test code should not contain implementation of function: {primary_method_name}"
+        )
 
-    # Check 4: Code is clean text (no markdown fences)
+    # Check 4: Code is clean text (no Markdown fences)
     if "```" in raw_code:
         errors.append("Test code contains markdown code fences (```)")
 
     # Check 5: Test functions exist
-    if not re.search(r'^\s*def\s+test_\w+\s*\(', raw_code, re.MULTILINE):
-        errors.append(f"No test functions found for target method: {primary_method_name}")
+    if not re.search(r"^\s*def\s+test_\w+\s*\(", raw_code, re.MULTILINE):
+        errors.append(
+            f"No test functions found for target method: {primary_method_name}"
+        )
 
     # Check 6: Restricted to 25,000 characters or less
     if len(raw_code) > 25000:
-        errors.append(f"test code size is > 25,000 characters.")
+        errors.append("test code size is > 25,000 characters.")
 
     # Return error message if any checks failed
     if errors:
-        error_message = "Validation failed:\n" + "\n".join(f"  - {error}" for error in errors)
+        error_message = "Validation failed:\n" + "\n".join(
+            f"  - {error}" for error in errors
+        )
         print(error_message)
         return f"\n{error_message}\n\n{raw_code})"
 
@@ -126,8 +126,7 @@ def _validate_test_code(
 
 
 def _build_completion_messages(
-    input_code: InputCodeList,
-    config: ExperimentConfig
+    input_code: InputCodeList, config: ExperimentConfig
 ) -> list[RoleMessage]:
     """Build messages for LLM call based on prompt configuration.
 
@@ -153,8 +152,7 @@ def _build_completion_messages(
     # Custom prompt: fetch system message from registry + build user message
     system_message = SystemMessage(
         content=get_custom_prompt(
-            name=config.prompt_name,
-            version=config.prompt_version
+            name=config.prompt_name, version=config.prompt_version
         )
     )
 
@@ -194,7 +192,7 @@ def _convert_to_submission_code(
     input_code_list: InputCodeList,
     assistant_message: AssistantMessage,
     prompt_number: str,
-    prompt_used: str
+    prompt_used: str,
 ) -> SubmissionCodeList:
     """Convert LLM response to SubmissionCodeList for submission.
 
@@ -211,7 +209,9 @@ def _convert_to_submission_code(
         ValueError: If test code cannot be extracted from response
     """
     if not assistant_message.content:
-        raise ValueError(f"No content in assistant message for trial {input_code_list.trial_id}")
+        raise ValueError(
+            f"No content in assistant message for trial {input_code_list.trial_id}"
+        )
 
     test_code = _extract_test_code(assistant_message.content)
     error_message = _validate_test_code(
@@ -226,7 +226,7 @@ def _convert_to_submission_code(
         prompt=prompt_used,
         primary_method_name=input_code_list.primary_method_name,
         test_output=assistant_message.content,
-        test_code=test_code if not error_message else ""
+        test_code=test_code if not error_message else "",
     )
 
 
@@ -246,6 +246,7 @@ def _get_project_root() -> Path:
 
     # Option 2: Find via genai_challenge package location
     import genai_challenge
+
     package_path = Path(genai_challenge.__file__).parent
     return package_path.parent
 
@@ -278,8 +279,7 @@ def _resolve_paths_from_config(config: ExperimentConfig) -> tuple[Path, Path]:
 
 
 def save_submission_data(
-    submission_data: SubmissionData,
-    output_folder: Union[str, Path]
+    submission_data: SubmissionData, output_folder: str | Path
 ) -> None:
     """Save SubmissionData to JSON file.
 
@@ -308,7 +308,7 @@ def save_submission_data(
                 "test_code": code.test_code,
             }
             for code in submission_data.code_list
-        ]
+        ],
     }
 
     with output_path.open("w", encoding="utf-8") as f:
@@ -317,9 +317,7 @@ def save_submission_data(
     print(f"Submission saved to: {output_path}")
 
 
-def run_code_pilot(
-    experiment_yaml_path: Union[str, Path]
-) -> SubmissionData:
+def run_code_pilot(experiment_yaml_path: str | Path) -> SubmissionData:
     """Main orchestration function for NIST Code Pilot challenge.
 
     Workflow:
@@ -371,7 +369,9 @@ def run_code_pilot(
     submission_code_list = []
 
     for idx, input_code in enumerate(input_data.code_list, start=1):
-        print(f"\n  [{idx}/{len(input_data.code_list)}] Processing trial: {input_code.trial_id}")
+        print(
+            f"\n  [{idx}/{len(input_data.code_list)}] Processing trial: {input_code.trial_id}"
+        )
         print(f"      Primary method name: {input_code.primary_method_name}")
 
         try:
@@ -388,17 +388,21 @@ def run_code_pilot(
 
             # Call LLM with fixed prompt
             fixed_assistant_message = llm_client.call(fixed_messages)
-            print(f"      ✓ Received response ({len(fixed_assistant_message.content or '')} chars)")
+            print(
+                f"      ✓ Received response ({len(fixed_assistant_message.content or '')} chars)"
+            )
 
             # Convert to submission format with prompt_number "0"
             fixed_submission_code = _convert_to_submission_code(
                 input_code_list=input_code,
                 assistant_message=fixed_assistant_message,
                 prompt_number="0",
-                prompt_used=fixed_prompt_string
+                prompt_used=fixed_prompt_string,
             )
             submission_code_list.append(fixed_submission_code)
-            print(f"      ✓ Extracted test code ({len(fixed_submission_code.test_code)} chars)")
+            print(
+                f"      ✓ Extracted test code ({len(fixed_submission_code.test_code)} chars)"
+            )
 
             # === CUSTOM PROMPT (prompt_number = "1") ===
             print("      Calling LLM with custom prompt...")
@@ -409,17 +413,21 @@ def run_code_pilot(
 
             # Call LLM with custom prompt
             custom_assistant_message = llm_client.call(custom_messages)
-            print(f"      ✓ Received response ({len(custom_assistant_message.content or '')} chars)")
+            print(
+                f"      ✓ Received response ({len(custom_assistant_message.content or '')} chars)"
+            )
 
             # Convert to submission format with prompt_number "1"
             custom_submission_code = _convert_to_submission_code(
                 input_code_list=input_code,
                 assistant_message=custom_assistant_message,
                 prompt_number="1",
-                prompt_used=custom_prompt_string
+                prompt_used=custom_prompt_string,
             )
             submission_code_list.append(custom_submission_code)
-            print(f"      ✓ Extracted test code ({len(custom_submission_code.test_code)} chars)")
+            print(
+                f"      ✓ Extracted test code ({len(custom_submission_code.test_code)} chars)"
+            )
 
             # break
             # time.sleep(25)  # TODO: sleep based on Usage tokens
@@ -439,9 +447,11 @@ def run_code_pilot(
         name=submission_name,
         version="2.00",
         system="TICCZ-CHO-Z-nist-code-pilot-pipeline",
-        code_list=submission_code_list
+        code_list=submission_code_list,
     )
-    print(f"  ✓ Created submission with {len(submission_data.code_list)} test suites")
+    print(
+        f"  ✓ Created submission with {len(submission_data.code_list)} test suites"
+    )
 
     # Save to JSON
     output_file_path = output_folder / f"{submission_data.name}.json"
@@ -458,7 +468,9 @@ def run_code_pilot(
 
 if __name__ == "__main__":
     # Default path to experiment config (contains input/output paths)
-    EXPERIMENT_YAML = Path(__file__).parent.parent / "experiment_code_pilot.yaml"
+    EXPERIMENT_YAML = (
+        Path(__file__).parent.parent / "experiment_code_pilot.yaml"
+    )
 
     # Run pipeline (all paths are configured in the YAML file)
     run_code_pilot(experiment_yaml_path=EXPERIMENT_YAML)

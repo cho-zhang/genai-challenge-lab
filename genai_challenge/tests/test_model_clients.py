@@ -1,7 +1,9 @@
 import json
-import pytest
 from unittest.mock import Mock, patch
-from litellm.utils import Message as LiteLlmMessage, ModelResponse, Choices
+
+import pytest
+from litellm.utils import Choices, ModelResponse
+from litellm.utils import Message as LiteLlmMessage
 
 from genai_challenge.llm.model_clients import LLMClient
 from genai_challenge.models.messages import (
@@ -28,7 +30,7 @@ class TestLLMClient:
             max_completion_tokens=100,
             temperature=0.7,
             top_p=0.9,
-            tool_choice="auto"
+            tool_choice="auto",
         )
 
     @pytest.fixture
@@ -48,7 +50,7 @@ class TestLLMClient:
         with pytest.raises(ValueError, match="Messages cannot be empty"):
             llm_client.call([])
 
-    @patch('genai_challenge.llm.model_clients.completion')
+    @patch("genai_challenge.llm.model_clients.completion")
     def test_call_with_simple_user_message(self, mock_completion, llm_client):
         """Test calling LLM with a simple user message."""
         # Setup mock response
@@ -73,8 +75,10 @@ class TestLLMClient:
         assert result.tool_calls is None
         mock_completion.assert_called_once()
 
-    @patch('genai_challenge.llm.model_clients.completion')
-    def test_call_with_system_and_user_messages(self, mock_completion, llm_client):
+    @patch("genai_challenge.llm.model_clients.completion")
+    def test_call_with_system_and_user_messages(
+        self, mock_completion, llm_client
+    ):
         """Test calling LLM with system and user messages."""
         # Setup mock response
         mock_message = Mock(spec=LiteLlmMessage)
@@ -91,7 +95,7 @@ class TestLLMClient:
         # Call the method
         messages = [
             SystemMessage(content="You are a helpful assistant."),
-            UserMessage(content="Hello")
+            UserMessage(content="Hello"),
         ]
         result = llm_client.call(messages)
 
@@ -119,10 +123,14 @@ class TestLLMClient:
 
     def test_convert_input_user_message_with_text_and_image(self, llm_client):
         """Test converting user message with text and image content."""
-        messages = [UserMessage(content=[
-            TextContent(text="What's in this image?"),
-            ImageUrlContent(image_url="https://example.com/image.jpg")
-        ])]
+        messages = [
+            UserMessage(
+                content=[
+                    TextContent(text="What's in this image?"),
+                    ImageUrlContent(image_url="https://example.com/image.jpg"),
+                ]
+            )
+        ]
         result = llm_client._convert_input_to_completion_messages(messages)
 
         assert len(result) == 1
@@ -131,7 +139,10 @@ class TestLLMClient:
         assert result[0]["content"][0]["type"] == "text"
         assert result[0]["content"][0]["text"] == "What's in this image?"
         assert result[0]["content"][1]["type"] == "image_url"
-        assert result[0]["content"][1]["image_url"]["url"] == "https://example.com/image.jpg"
+        assert (
+            result[0]["content"][1]["image_url"]["url"]
+            == "https://example.com/image.jpg"
+        )
 
     def test_convert_input_assistant_message_with_content(self, llm_client):
         """Test converting assistant message with content."""
@@ -147,7 +158,7 @@ class TestLLMClient:
         tool_call = ToolCallInfo(
             id="call_123",
             tool_name="get_weather",
-            tool_arguments={"location": "San Francisco"}
+            tool_arguments={"location": "San Francisco"},
         )
         messages = [AssistantMessage(content=None, tool_calls=[tool_call])]
         result = llm_client._convert_input_to_completion_messages(messages)
@@ -159,22 +170,28 @@ class TestLLMClient:
         assert result[0]["tool_calls"][0]["id"] == "call_123"
         assert result[0]["tool_calls"][0]["type"] == "function"
         assert result[0]["tool_calls"][0]["function"]["name"] == "get_weather"
-        assert json.loads(result[0]["tool_calls"][0]["function"]["arguments"]) == {"location": "San Francisco"}
+        assert json.loads(
+            result[0]["tool_calls"][0]["function"]["arguments"]
+        ) == {"location": "San Francisco"}
 
     def test_convert_input_tool_message(self, llm_client):
         """Test converting tool message to completion format."""
-        messages = [ToolMessage(
-            tool_call_id="call_123",
-            tool_name="get_weather",
-            content='{"temperature": 72, "condition": "sunny"}'
-        )]
+        messages = [
+            ToolMessage(
+                tool_call_id="call_123",
+                tool_name="get_weather",
+                content='{"temperature": 72, "condition": "sunny"}',
+            )
+        ]
         result = llm_client._convert_input_to_completion_messages(messages)
 
         assert len(result) == 1
         assert result[0]["role"] == MessageRole.TOOL
         assert result[0]["tool_call_id"] == "call_123"
         assert result[0]["name"] == "get_weather"
-        assert result[0]["content"] == '{"temperature": 72, "condition": "sunny"}'
+        assert (
+            result[0]["content"] == '{"temperature": 72, "condition": "sunny"}'
+        )
 
     def test_convert_input_multiple_messages(self, llm_client):
         """Test converting multiple messages of different types."""
@@ -183,17 +200,19 @@ class TestLLMClient:
             UserMessage(content="What's the weather?"),
             AssistantMessage(
                 content=None,
-                tool_calls=[ToolCallInfo(
-                    id="call_123",
-                    tool_name="get_weather",
-                    tool_arguments={"location": "San Francisco"}
-                )]
+                tool_calls=[
+                    ToolCallInfo(
+                        id="call_123",
+                        tool_name="get_weather",
+                        tool_arguments={"location": "San Francisco"},
+                    )
+                ],
             ),
             ToolMessage(
                 tool_call_id="call_123",
                 tool_name="get_weather",
-                content='{"temperature": 72}'
-            )
+                content='{"temperature": 72}',
+            ),
         ]
         result = llm_client._convert_input_to_completion_messages(messages)
 
@@ -219,8 +238,7 @@ class TestLLMClient:
         completion_params = {"model": "gpt-4", "messages": []}
 
         result = llm_client._convert_llm_response_to_assistant_message(
-            model_response=mock_response,
-            completion_params=completion_params
+            model_response=mock_response, completion_params=completion_params
         )
 
         assert isinstance(result, AssistantMessage)
@@ -252,8 +270,7 @@ class TestLLMClient:
         completion_params = {"model": "gpt-4", "messages": []}
 
         result = llm_client._convert_llm_response_to_assistant_message(
-            model_response=mock_response,
-            completion_params=completion_params
+            model_response=mock_response, completion_params=completion_params
         )
 
         assert isinstance(result, AssistantMessage)
@@ -261,7 +278,9 @@ class TestLLMClient:
         assert len(result.tool_calls) == 1
         assert result.tool_calls[0].id == "call_123"
         assert result.tool_calls[0].tool_name == "get_weather"
-        assert result.tool_calls[0].tool_arguments == {"location": "San Francisco"}
+        assert result.tool_calls[0].tool_arguments == {
+            "location": "San Francisco"
+        }
 
     def test_convert_llm_response_with_dict_arguments(self, llm_client):
         """Test that passing dict arguments (instead of JSON string) should fail."""
@@ -291,7 +310,7 @@ class TestLLMClient:
         with pytest.raises(AssertionError):
             llm_client._convert_llm_response_to_assistant_message(
                 model_response=mock_response,
-                completion_params=completion_params
+                completion_params=completion_params,
             )
 
     def test_convert_llm_response_invalid_message_type(self, llm_client):
@@ -307,10 +326,10 @@ class TestLLMClient:
         with pytest.raises(TypeError, match="Expected LiteLLM message type"):
             llm_client._convert_llm_response_to_assistant_message(
                 model_response=mock_response,
-                completion_params=completion_params
+                completion_params=completion_params,
             )
 
-    @patch('genai_challenge.llm.model_clients.completion')
+    @patch("genai_challenge.llm.model_clients.completion")
     def test_call_passes_correct_parameters(self, mock_completion, llm_config):
         """Test that call method passes correct parameters to completion."""
         # Setup mock response
@@ -349,17 +368,20 @@ class TestLLMClient:
         assert result[0]["role"] == MessageRole.USER
         assert result[0]["content"] == ""
 
-    def test_convert_input_assistant_with_content_and_tool_calls(self, llm_client):
+    def test_convert_input_assistant_with_content_and_tool_calls(
+        self, llm_client
+    ):
         """Test converting assistant message with both content and tool calls."""
         tool_call = ToolCallInfo(
             id="call_789",
             tool_name="search",
-            tool_arguments={"query": "python"}
+            tool_arguments={"query": "python"},
         )
-        messages = [AssistantMessage(
-            content="Let me search for that.",
-            tool_calls=[tool_call]
-        )]
+        messages = [
+            AssistantMessage(
+                content="Let me search for that.", tool_calls=[tool_call]
+            )
+        ]
         result = llm_client._convert_input_to_completion_messages(messages)
 
         assert len(result) == 1
@@ -382,8 +404,7 @@ class TestLLMClient:
         completion_params = {"model": "gpt-4", "messages": []}
 
         result = llm_client._convert_llm_response_to_assistant_message(
-            model_response=mock_response,
-            completion_params=completion_params
+            model_response=mock_response, completion_params=completion_params
         )
 
         assert result.content is None
@@ -420,8 +441,7 @@ class TestLLMClient:
         completion_params = {"model": "gpt-4", "messages": []}
 
         result = llm_client._convert_llm_response_to_assistant_message(
-            model_response=mock_response,
-            completion_params=completion_params
+            model_response=mock_response, completion_params=completion_params
         )
 
         assert len(result.tool_calls) == 2
