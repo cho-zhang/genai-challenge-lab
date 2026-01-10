@@ -1,6 +1,7 @@
 import json
 import os
 import re
+import time
 from datetime import datetime
 from pathlib import Path
 from typing import Union
@@ -421,6 +422,7 @@ def run_code_pilot(
             print(f"      ✓ Extracted test code ({len(custom_submission_code.test_code)} chars)")
 
             # break
+            # time.sleep(25)  # TODO: sleep based on Usage tokens
 
         except Exception as e:
             print(f"      ✗ Error processing trial {input_code.trial_id}: {e}")
