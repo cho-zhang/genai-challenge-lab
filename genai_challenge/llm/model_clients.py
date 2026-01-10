@@ -1,11 +1,18 @@
 import json
-from typing import Any, Optional
+import logging
+from typing import Any
 
 import litellm
 from litellm import completion
-from litellm.utils import (
-    Message as LiteLlmMessage,
-    ModelResponse
+from litellm.utils import Message as LiteLlmMessage
+from litellm.utils import ModelResponse
+from tenacity import (
+    RetryCallState,
+    retry,
+    retry_if_exception,
+    stop_after_attempt,
+    wait_exponential_jitter,
+    wait_random_exponential,
 )
 
 from genai_challenge.models.messages import (
@@ -18,6 +25,17 @@ from genai_challenge.models.messages import (
     ToolCallInfo,
     ToolMessage,
 )
+from pipelines.retry_utils import is_retryable_exception
+
+logger = logging.getLogger(__name__)
+
+
+def _log_retry_attempt(retry_state: RetryCallState):
+    ex = retry_state.outcome.exception() if retry_state.outcome else None
+    logger.warning(
+        f"Encountering transient LLM API error: {ex},"
+        f"retrying... (attempt {retry_state.attempt_number})"
+    )
 
 
 class LLMClient:
@@ -33,16 +51,27 @@ class LLMClient:
         # To drop unsupported params set litellm.drop_params = True
         litellm.drop_params = True
 
+    @retry(
+        retry=retry_if_exception(is_retryable_exception),
+        reraise=True,
+        stop=stop_after_attempt(5),  # Allow more retries for rate limits
+        wait=wait_random_exponential(
+            multiplier=1, min=4, max=60
+        ),  # Wait 4-60 seconds with exponential backoff
+        before_sleep=_log_retry_attempt,
+    )
     def call(
         self,
         messages: list[RoleMessage],
-        available_tools: Optional[list] = None
+        available_tools: list | None = None,
     ) -> AssistantMessage:
         """Call LLM with a list of messages and return an AssistantMessage."""
         if not messages:
             raise ValueError("Messages cannot be empty")
 
-        completion_messages = self._convert_input_to_completion_messages(messages)
+        completion_messages = self._convert_input_to_completion_messages(
+            messages
+        )
 
         # Build completion parameters
         completion_params = {
@@ -69,8 +98,7 @@ class LLMClient:
         return assistant_message
 
     def _convert_input_to_completion_messages(
-        self,
-        messages: list[RoleMessage]
+        self, messages: list[RoleMessage]
     ) -> list[dict[str, Any]]:
         """Convert typed RoleMessage list to dict format for litellm completion API"""
         result = []
@@ -84,18 +112,19 @@ class LLMClient:
                     content_list = []
                     for content_item in msg.content:
                         if isinstance(content_item, TextContent):
-                            content_list.append({
-                                "type": "text",
-                                "text": content_item.text
-                            })
+                            content_list.append(
+                                {"type": "text", "text": content_item.text}
+                            )
                         elif isinstance(content_item, ImageUrlContent):
-                            content_list.append({
-                                "type": "image_url",
-                                # bug: "image_url": content_item.image_url
-                                "image_url": {
-                                    "url": content_item.image_url
+                            content_list.append(
+                                {
+                                    "type": "image_url",
+                                    # bug: "image_url": content_item.image_url
+                                    "image_url": {
+                                        "url": content_item.image_url
+                                    },
                                 }
-                            })
+                            )
                     message_dict["content"] = content_list
                 else:
                     # text-only user|system message
@@ -110,15 +139,17 @@ class LLMClient:
                     tool_calls_list = []
                     for tc in msg.tool_calls:
                         # https://docs.litellm.ai/docs/completion/function_call
-                        tool_calls_list.append({
-                            "id": tc.id,
-                            "type": "function",
-                            "function": {
-                                "name": tc.tool_name,
-                                # "arguments": tc.tool_arguments
-                                "arguments": json.dumps(tc.tool_arguments)
+                        tool_calls_list.append(
+                            {
+                                "id": tc.id,
+                                "type": "function",
+                                "function": {
+                                    "name": tc.tool_name,
+                                    # "arguments": tc.tool_arguments
+                                    "arguments": json.dumps(tc.tool_arguments),
+                                },
                             }
-                        })
+                        )
                     message_dict["tool_calls"] = tool_calls_list
 
             elif isinstance(msg, ToolMessage):
@@ -132,9 +163,7 @@ class LLMClient:
         return result
 
     def _convert_llm_response_to_assistant_message(
-        self,
-        model_response: ModelResponse,
-        completion_params: dict[str, Any]
+        self, model_response: ModelResponse, completion_params: dict[str, Any]
     ) -> AssistantMessage:
         """Convert litellm response to AssistantMessage.
 
@@ -146,7 +175,11 @@ class LLMClient:
             AssistantMessage with content and/or tool_calls extracted from response
         """
         message = model_response.choices[0].message
-        debug_llm_output = model_response if isinstance(model_response, dict) else {"response": model_response}
+        debug_llm_output = (
+            model_response
+            if isinstance(model_response, dict)
+            else {"response": model_response}
+        )
         debug_llm_input = completion_params
 
         if not isinstance(message, LiteLlmMessage):
@@ -163,11 +196,13 @@ class LLMClient:
                 # Parse function arguments (litellm returns them as JSON string)
                 assert isinstance(tool_call.function.arguments, str)
                 function_args = json.loads(tool_call.function.arguments)
-                tool_calls.append(ToolCallInfo(
-                    id=tool_call.id,
-                    tool_name=tool_call.function.name,
-                    tool_arguments=function_args
-                ))
+                tool_calls.append(
+                    ToolCallInfo(
+                        id=tool_call.id,
+                        tool_name=tool_call.function.name,
+                        tool_arguments=function_args,
+                    )
+                )
 
         return AssistantMessage(
             content=content,

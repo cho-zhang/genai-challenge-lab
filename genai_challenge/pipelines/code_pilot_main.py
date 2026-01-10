@@ -430,7 +430,6 @@ def run_code_pilot(experiment_yaml_path: str | Path) -> SubmissionData:
             )
 
             # break
-            # time.sleep(25)  # TODO: sleep based on Usage tokens
 
         except Exception as e:
             print(f"      ✗ Error processing trial {input_code.trial_id}: {e}")
