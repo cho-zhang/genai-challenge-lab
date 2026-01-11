@@ -128,3 +128,8 @@ def custom_prompt_4() -> str:
 @custom_prompt_registry.register(name="custom_prompt", version="5")
 def custom_prompt_5() -> str:
     return PromptReader.load_prompt(name="custom_prompt", version="5")
+
+
+@custom_prompt_registry.register(name="custom_prompt", version="6")
+def custom_prompt_6() -> str:
+    return PromptReader.load_prompt(name="custom_prompt", version="6")

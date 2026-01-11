@@ -8,6 +8,11 @@ output_folder: "2026_code/submissions"
 
 # LLM configuration
 llm_config:
+  # ============ GPT 5.2 + default reasoning ============ #
+   model_name: "gpt-5.2"
+   max_completion_tokens: 4000
+   reasoning_effort: "medium"
+
   # ============ GPT 5 mini + minimal reasoning ============ #
   # model_name: "gpt-5-mini"
   # temperature: 0.0
@@ -25,8 +30,8 @@ llm_config:
   # max_completion_tokens: 500
 
   # ============ Haiku ============ #
-  model_name: "claude-haiku-4-5-20251001"
-  max_completion_tokens: 3000
+  #model_name: "claude-haiku-4-5-20251001"
+  #max_completion_tokens: 3000
 
   # ============ Sonnet ============ #
   # model_name: "claude-sonnet-4-5"
@@ -38,4 +43,4 @@ llm_config:
 # prompt_version: "2.00"
 # Or use custom prompt from registry:
 prompt_name: "custom_prompt"
-prompt_version: "5"
+prompt_version: "6"

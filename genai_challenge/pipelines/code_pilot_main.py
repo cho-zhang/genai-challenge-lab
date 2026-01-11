@@ -379,7 +379,7 @@ def run_code_pilot(experiment_yaml_path: str | Path) -> SubmissionData:
             # === FIXED PROMPT (prompt_number = "0") ===
             print("      Calling LLM with fixed prompt...")
 
-            # if input_code.trial_id != "00003_make_palindrome":
+            # if input_code.trial_id != "10031_compute_list_values":
             #     continue
 
             # Build messages for fixed prompt (just a single UserMessage)

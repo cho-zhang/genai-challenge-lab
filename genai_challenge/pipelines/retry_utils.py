@@ -26,4 +26,6 @@ def is_retryable_exception(exception: BaseException) -> bool:
         )
     elif isinstance(exception, litellm.exceptions.RateLimitError):
         return True
+    elif isinstance(exception, litellm.exceptions.InternalServerError):
+        return True
     return isinstance(exception, aiohttp.ClientError)
