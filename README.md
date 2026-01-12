@@ -19,10 +19,16 @@ $ python -c "import litellm; import tenacity; print('Environment Ready')"
 
 ```
 
+## How to run a pipeline
+1. Ensure API Keys (e.g. `$OPENAI_API_KEY`) for foundation models are set.
+2. View/modify the input data path, output folder, and experiments config via YAML config (e.g. `genai_challenge/experiment_code_pilot.yaml`)
+3. Run pipeline (e.g. `genai_challenge/pipelines/code_pilot_main.py`).
 
-## Results - 2025 NIST GenAI Code Pilot Challenge
+
+## Submissions - 2025 NIST GenAI Code Pilot Challenge
 - https://ai-challenges.nist.gov/code
 - The custom prompts are only included in the System Description file.
+- Create more prompt versions under [folder](https://github.com/cho-zhang/genai-challenge-lab/tree/main/genai_challenge/data/prompts). 
 
 | Submission Id | Model             | Hyperparameters                              | Custom Prompt Version | Prompt Number | Correct (%) | CI1 (%) | CIT (%) | Full Coverage Finds All Errors (%) |
 |---------------|-----------------|---------------------------------------------|---------------------|---------------|------------|---------|---------|----------------------------------|

@@ -43,4 +43,4 @@ llm_config:
 # prompt_version: "2.00"
 # Or use custom prompt from registry:
 prompt_name: "custom_prompt"
-prompt_version: "6"
+prompt_version: "5"
