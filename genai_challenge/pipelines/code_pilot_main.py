@@ -6,7 +6,7 @@ from pathlib import Path
 
 from genai_challenge.io.experiment_config_reader import ExperimentConfigReader
 from genai_challenge.io.nist_reader import NISTInputReader
-from genai_challenge.llm.model_clients import LLMClient
+from genai_challenge.llm.litellm_clients import LLMClient
 from genai_challenge.llm.prompt_registry import get_custom_prompt
 from genai_challenge.models.code_pilot_data import (
     ExperimentConfig,
