@@ -2,7 +2,7 @@ import json
 
 import litellm
 
-from genai_challenge.llm.model_clients import LLMClient
+from genai_challenge.llm.litellm_clients import LLMClient
 from genai_challenge.models.messages import LLMConfig, SystemMessage
 
 

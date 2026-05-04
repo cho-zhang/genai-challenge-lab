@@ -5,7 +5,7 @@ import pytest
 from litellm.utils import Choices, ModelResponse
 from litellm.utils import Message as LiteLlmMessage
 
-from genai_challenge.llm.model_clients import LLMClient
+from genai_challenge.llm.litellm_clients import LLMClient
 from genai_challenge.models.messages import (
     AssistantMessage,
     ImageUrlContent,
@@ -50,7 +50,7 @@ class TestLLMClient:
         with pytest.raises(ValueError, match="Messages cannot be empty"):
             llm_client.call([])
 
-    @patch("genai_challenge.llm.model_clients.completion")
+    @patch("genai_challenge.llm.litellm_clients.completion")
     def test_call_with_simple_user_message(self, mock_completion, llm_client):
         """Test calling LLM with a simple user message."""
         # Setup mock response
@@ -75,7 +75,7 @@ class TestLLMClient:
         assert result.tool_calls is None
         mock_completion.assert_called_once()
 
-    @patch("genai_challenge.llm.model_clients.completion")
+    @patch("genai_challenge.llm.litellm_clients.completion")
     def test_call_with_system_and_user_messages(
         self, mock_completion, llm_client
     ):
@@ -329,7 +329,7 @@ class TestLLMClient:
                 completion_params=completion_params,
             )
 
-    @patch("genai_challenge.llm.model_clients.completion")
+    @patch("genai_challenge.llm.litellm_clients.completion")
     def test_call_passes_correct_parameters(self, mock_completion, llm_config):
         """Test that call method passes correct parameters to completion."""
         # Setup mock response

@@ -25,7 +25,7 @@ from genai_challenge.models.messages import (
     ToolCallInfo,
     ToolMessage,
 )
-from pipelines.retry_utils import is_retryable_exception
+from genai_challenge.pipelines.retry_utils import is_retryable_exception
 
 logger = logging.getLogger(__name__)
 
